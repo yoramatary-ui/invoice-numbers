@@ -50,6 +50,14 @@ describe('detectColumns', () => {
       numberColIndex: 1,
     });
   });
+
+  test('falls back correctly when the name column is not index 0 or 1', () => {
+    const header = ['Col1', 'Col2', 'שם לקוח'];
+    expect(detectColumns(header)).toEqual({
+      nameColIndex: 2,
+      numberColIndex: 0,
+    });
+  });
 });
 
 describe('findMatchingRow', () => {

@@ -91,4 +91,25 @@ describe('POST /api/process', () => {
     const body = await response.json();
     expect(body.unmatched).toContain('לא קיים.pdf');
   });
+
+  test('rejects non-PDF files uploaded under the pdfs field', async () => {
+    const excelBuffer = await buildExcelBuffer();
+
+    const form = new FormData();
+    form.append('excel', new Blob([excelBuffer]), 'clients.xlsx');
+    form.append(
+      'pdfs',
+      new Blob(['not a pdf'], { type: 'text/plain' }),
+      'notes.txt'
+    );
+
+    const response = await fetch(`${baseUrl}/api/process`, {
+      method: 'POST',
+      body: form,
+    });
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBeTruthy();
+  });
 });

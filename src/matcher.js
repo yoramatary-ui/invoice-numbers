@@ -51,12 +51,16 @@ function detectColumns(headerRow) {
 
   if (nameColIndex === -1) nameColIndex = 0;
   if (numberColIndex === -1 || numberColIndex === nameColIndex) {
-    numberColIndex = nameColIndex === 0 ? 1 : 0;
+    // Fall back to the first column index (starting from 0) that isn't
+    // already used as the name column.
+    numberColIndex = 0;
+    while (numberColIndex === nameColIndex) {
+      numberColIndex += 1;
+    }
   }
 
   return { nameColIndex, numberColIndex };
 }
-
 /**
  * Finds the row whose name matches (exactly, or as a substring in either
  * direction) the given PDF filename, and returns its document number.

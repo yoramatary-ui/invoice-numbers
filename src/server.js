@@ -11,9 +11,32 @@ const { stampPdf } = require('./stamp');
 
 const app = express();
 
+const EXCEL_MIME_TYPES = [
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'text/csv',
+];
+const EXCEL_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 }, // 25MB per file
+  fileFilter(req, file, cb) {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (file.fieldname === 'excel') {
+      if (EXCEL_MIME_TYPES.includes(file.mimetype) || EXCEL_EXTENSIONS.includes(ext)) {
+        return cb(null, true);
+      }
+      return cb(new Error('קובץ האקסל חייב להיות בפורמט xlsx, xls או csv'));
+    }
+    if (file.fieldname === 'pdfs') {
+      if (file.mimetype === 'application/pdf' || ext === '.pdf') {
+        return cb(null, true);
+      }
+      return cb(new Error('כל קבצי המסמכים חייבים להיות בפורמט PDF'));
+    }
+    return cb(new Error('שדה קובץ לא צפוי'));
+  },
 });
 
 // Busboy/multer decode multipart filenames as latin1 by default, which
@@ -78,16 +101,25 @@ app.post(
       }
 
       const archive = archiver('zip', { zlib: { level: 9 } });
-      archive.on('error', (err) => {
-        throw err;
-      });
       archive.pipe(res);
 
       for (const result of results) {
         archive.append(Buffer.from(result.bytes), { name: result.name });
       }
 
-      await archive.finalize();
+      await new Promise((resolve, reject) => {
+        archive.on('error', reject);
+        res.on('close', resolve);
+        res.on('error', reject);
+        archive.finalize().catch(reject);
+      }).catch((err) => {
+        console.error(err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'אירעה שגיאה ביצירת קובץ ה-ZIP' });
+        } else if (!res.writableEnded) {
+          res.destroy(err);
+        }
+      });
     } catch (err) {
       console.error(err);
       if (!res.headersSent) {
@@ -96,5 +128,16 @@ app.post(
     }
   }
 );
+
+// Handles multer errors (e.g. file size/type validation) and any other
+// errors passed to next().
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error(err);
+  if (res.headersSent) {
+    return res.destroy(err);
+  }
+  res.status(400).json({ error: err.message || 'אירעה שגיאה בהעלאת הקבצים' });
+});
 
 module.exports = app;
