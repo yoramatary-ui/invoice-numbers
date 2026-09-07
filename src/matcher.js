@@ -40,6 +40,21 @@ function findColumnIndex(headerRow, keywords) {
 }
 
 /**
+ * Returns the first column index in [0, columnCount) that isn't `exclude`,
+ * or -1 if no such column exists.
+ * @param {number} exclude
+ * @param {number} columnCount
+ * @returns {number}
+ */
+function firstIndexExcluding(exclude, columnCount) {
+  let candidate = 0;
+  while (candidate === exclude) {
+    candidate += 1;
+  }
+  return candidate < columnCount ? candidate : -1;
+}
+
+/**
  * Detects the "name" and "document number" columns from a header row.
  * Falls back to the first and second columns when no keyword match is found.
  * @param {Array<string>} headerRow
@@ -50,15 +65,13 @@ function detectColumns(headerRow) {
   let nameColIndex = findColumnIndex(headerRow, NAME_KEYWORDS);
   let numberColIndex = findColumnIndex(headerRow, NUMBER_KEYWORDS);
 
-  if (nameColIndex === -1) nameColIndex = 0;
-  if (numberColIndex === -1 || numberColIndex === nameColIndex) {
-    // Fall back to the first column index (starting from 0) that isn't
-    // already used as the name column, or -1 if no such column exists.
-    let candidate = 0;
-    while (candidate === nameColIndex) {
-      candidate += 1;
-    }
-    numberColIndex = candidate < columnCount ? candidate : -1;
+  if (nameColIndex === -1 && numberColIndex === -1) {
+    nameColIndex = 0;
+    numberColIndex = firstIndexExcluding(nameColIndex, columnCount);
+  } else if (nameColIndex === -1) {
+    nameColIndex = firstIndexExcluding(numberColIndex, columnCount);
+  } else if (numberColIndex === -1 || numberColIndex === nameColIndex) {
+    numberColIndex = firstIndexExcluding(nameColIndex, columnCount);
   }
 
   return { nameColIndex, numberColIndex };

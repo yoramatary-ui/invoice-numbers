@@ -66,6 +66,22 @@ describe('detectColumns', () => {
       numberColIndex: -1,
     });
   });
+
+  test('does not misassign the name column when it collides with the detected number column', () => {
+    const header = ['מספר תעודה', 'תאריך'];
+    expect(detectColumns(header)).toEqual({
+      nameColIndex: 1,
+      numberColIndex: 0,
+    });
+  });
+
+  test('returns -1 for the name column when only the number column is recognized and no other column exists', () => {
+    const header = ['מספר תעודה'];
+    expect(detectColumns(header)).toEqual({
+      nameColIndex: -1,
+      numberColIndex: 0,
+    });
+  });
 });
 
 describe('findMatchingRow', () => {

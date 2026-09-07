@@ -40,9 +40,16 @@ const upload = multer({
 });
 
 // Busboy/multer decode multipart filenames as latin1 by default, which
-// mangles UTF-8 (e.g. Hebrew) filenames. Re-decode them correctly.
+// mangles UTF-8 (e.g. Hebrew) filenames. Only re-decode when the original
+// string looks like mis-decoded latin1 (i.e. every character fits in the
+// latin1 range) and the round-trip produces valid, replacement-free UTF-8;
+// otherwise keep the original string untouched.
 function fixFilenameEncoding(originalname) {
-  return Buffer.from(originalname, 'latin1').toString('utf8');
+  if (!originalname || !/^[\u0000-\u00ff]*$/.test(originalname)) {
+    return originalname;
+  }
+  const reencoded = Buffer.from(originalname, 'latin1').toString('utf8');
+  return reencoded.includes('\uFFFD') ? originalname : reencoded;
 }
 
 app.use(express.static(path.join(__dirname, '..', 'public')));
