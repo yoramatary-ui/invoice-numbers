@@ -25,7 +25,6 @@
         throw new Error(data.error || 'אירעה שגיאה בעיבוד הקבצים');
       }
 
-      const unmatchedHeader = response.headers.get('X-Unmatched-Files');
       const blob = await response.blob();
 
       const url = URL.createObjectURL(blob);
@@ -37,14 +36,11 @@
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      let message = 'ההורדה הושלמה בהצלחה!';
-      if (unmatchedHeader) {
-        const unmatched = JSON.parse(decodeURIComponent(unmatchedHeader));
-        if (unmatched.length > 0) {
-          message += `\nהקבצים הבאים לא נמצאה עבורם התאמה באקסל: ${unmatched.join(', ')}`;
-        }
-      }
-      setStatus(message, 'success');
+      setStatus(
+        'ההורדה הושלמה בהצלחה! אם חלק מהקבצים לא נמצאה עבורם התאמה, ' +
+          'תמצאו רשימה שלהם בקובץ "קבצים-ללא-התאמה.txt" בתוך ה-ZIP.',
+        'success'
+      );
     } catch (err) {
       setStatus(err.message, 'error');
     } finally {

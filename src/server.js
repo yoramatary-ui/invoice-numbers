@@ -96,15 +96,20 @@ app.post(
         'Content-Disposition',
         'attachment; filename="stamped-pdfs.zip"'
       );
-      if (unmatched.length > 0) {
-        res.setHeader('X-Unmatched-Files', encodeURIComponent(JSON.stringify(unmatched)));
-      }
 
       const archive = archiver('zip', { zlib: { level: 9 } });
       archive.pipe(res);
 
       for (const result of results) {
         archive.append(Buffer.from(result.bytes), { name: result.name });
+      }
+
+      if (unmatched.length > 0) {
+        const manifest =
+          'הקבצים הבאים לא נמצאה עבורם התאמה באקסל ולכן לא עודכנו:\n' +
+          unmatched.join('\n') +
+          '\n';
+        archive.append(manifest, { name: 'קבצים-ללא-התאמה.txt' });
       }
 
       await new Promise((resolve, reject) => {
