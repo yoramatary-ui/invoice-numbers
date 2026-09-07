@@ -109,7 +109,12 @@ app.post(
 
       await new Promise((resolve, reject) => {
         archive.on('error', reject);
-        res.on('close', resolve);
+        res.on('finish', resolve);
+        res.on('close', () => {
+          if (!res.writableEnded) {
+            reject(new Error('החיבור נסגר לפני שההורדה הסתיימה'));
+          }
+        });
         res.on('error', reject);
         archive.finalize().catch(reject);
       }).catch((err) => {

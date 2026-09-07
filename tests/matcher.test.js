@@ -58,6 +58,14 @@ describe('detectColumns', () => {
       numberColIndex: 0,
     });
   });
+
+  test('returns -1 for the number column when only one column exists', () => {
+    const header = ['שם לקוח'];
+    expect(detectColumns(header)).toEqual({
+      nameColIndex: 0,
+      numberColIndex: -1,
+    });
+  });
 });
 
 describe('findMatchingRow', () => {

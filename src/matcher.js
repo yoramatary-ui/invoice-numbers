@@ -46,17 +46,19 @@ function findColumnIndex(headerRow, keywords) {
  * @returns {{ nameColIndex: number, numberColIndex: number }}
  */
 function detectColumns(headerRow) {
+  const columnCount = Array.isArray(headerRow) ? headerRow.length : 0;
   let nameColIndex = findColumnIndex(headerRow, NAME_KEYWORDS);
   let numberColIndex = findColumnIndex(headerRow, NUMBER_KEYWORDS);
 
   if (nameColIndex === -1) nameColIndex = 0;
   if (numberColIndex === -1 || numberColIndex === nameColIndex) {
     // Fall back to the first column index (starting from 0) that isn't
-    // already used as the name column.
-    numberColIndex = 0;
-    while (numberColIndex === nameColIndex) {
-      numberColIndex += 1;
+    // already used as the name column, or -1 if no such column exists.
+    let candidate = 0;
+    while (candidate === nameColIndex) {
+      candidate += 1;
     }
+    numberColIndex = candidate < columnCount ? candidate : -1;
   }
 
   return { nameColIndex, numberColIndex };
